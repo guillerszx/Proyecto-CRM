@@ -32,6 +32,7 @@ export type PaymentRecord = {
   clientName: string; // snapshot del nombre por si se elimina
   category: string;
   subcategory: string;
+  totalAmount: number;
   amount: number;
   date: string; // YYYY-MM-DD (fecha de pago)
   inscriptionDate: string; // YYYY-MM-DD (fecha de inscripción)
@@ -41,7 +42,7 @@ export type PaymentRecord = {
 
 export type Preferences = {
   theme: "light" | "dark" | "system";
-  fontSize: "small" | "normal" | "large" | "extra-large";
+  fontSize: "small" | "medium" | "large" | "extra-large";
 };
 
 const CLIENTS_KEY = "gym_crm_clients_v1";
@@ -206,14 +207,32 @@ export const CATEGORIES: Record<
 
 export function usePreferences() {
   const [prefs, setPrefs] = useStore<Preferences>(PREFERENCES_KEY);
+
+  const normalizePreferences = (value?: Preferences): Preferences => {
+    if (!value) return { theme: "light", fontSize: "medium" };
+    if (value.fontSize === "normal") {
+      return { ...value, fontSize: "medium" };
+    }
+    return value;
+  };
   
   const getPreferences = (): Preferences => {
-    return prefs[0] ?? { theme: "light", fontSize: "normal" };
+    return normalizePreferences(prefs[0]);
   };
+
+  useEffect(() => {
+    const current = prefs[0];
+    if (current?.fontSize === "normal") {
+      setPrefs((prev) => {
+        const latest = prev[0] ?? { theme: "light", fontSize: "medium" };
+        return [{ ...latest, fontSize: "medium" }];
+      });
+    }
+  }, [prefs, setPrefs]);
 
   const updatePreferences = (p: Partial<Preferences>) => {
     setPrefs((prev) => {
-      const current = prev[0] ?? { theme: "light", fontSize: "normal" };
+      const current = normalizePreferences(prev[0]);
       return [{ ...current, ...p }];
     });
   };

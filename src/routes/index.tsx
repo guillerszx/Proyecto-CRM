@@ -51,9 +51,7 @@ export const Route = createFileRoute("/")({
 function ClientsPage() {
   const { clients, addClient, updateClient, deleteClient } = useClients();
   const [search, setSearch] = useState("");
-  const [sortMode, setSortMode] = useState<"current" | "recent" | "name-asc" | "name-desc">(
-    "current",
-  );
+  const [sortMode, setSortMode] = useState<"recent" | "name-asc" | "name-desc">("recent");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
@@ -78,15 +76,12 @@ function ClientsPage() {
       case "name-desc":
         list.sort((a, b) => b.name.localeCompare(a.name));
         break;
-      case "current":
-      default:
-        break;
     }
     return list;
   }, [clients, search, sortMode]);
-
+              <CardHeader className="pb-1.5">
   const { payments } = usePayments();
-  const clientsWithDebt = useMemo(() => new Set(payments.filter((p) => p.debt > 0).map((p) => p.clientId)), [payments]);
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-8">
@@ -97,22 +92,26 @@ function ClientsPage() {
         </p>
       </div>
 
-      <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
-        <div className="relative min-w-0 flex-1">
+      <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">Buscar clientes</span>
+          </div>
+          <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre, teléfono o correo…"
+            placeholder="Nombre, teléfono o correo del cliente"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
           />
+          </div>
         </div>
         <Select value={sortMode} onValueChange={(value) => setSortMode(value as typeof sortMode)}>
           <SelectTrigger className="w-full lg:w-[210px]">
             <SelectValue placeholder="Ordenar" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="current">Orden actual</SelectItem>
             <SelectItem value="recent">Añadidos recientes</SelectItem>
             <SelectItem value="name-asc">Nombre (A–Z)</SelectItem>
             <SelectItem value="name-desc">Nombre (Z–A)</SelectItem>
@@ -124,7 +123,7 @@ function ClientsPage() {
             size="sm"
             onClick={() => setViewMode("grid")}
             title="Ver en tarjetas"
-          >
+                <div className="flex justify-end gap-1.5 pt-1.5">
             <LayoutGrid className="h-4 w-4" />
             <span className="hidden sm:inline">Tarjetas</span>
           </Button>
@@ -183,7 +182,7 @@ function ClientsPage() {
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
                     {c.name.slice(0, 1).toUpperCase()}
                   </div>
-                  <span className="min-w-0 truncate flex items-center gap-2">
+                    <span className="min-w-0 flex items-center gap-2 truncate">
                     <span className="truncate">{c.name}</span>
                     {clientsWithDebt.has(c.id) && (
                       <span className="inline-block h-2 w-2 rounded-full bg-destructive" aria-hidden />
@@ -191,8 +190,8 @@ function ClientsPage() {
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className={viewMode === "list" ? "space-y-3" : "space-y-2"}>
-                <div className={viewMode === "list" ? "grid gap-3 md:grid-cols-[1.2fr_0.8fr_auto] md:items-center" : "space-y-2"}>
+              <CardContent className={viewMode === "list" ? "space-y-4" : "space-y-3"}>
+                  <div className={viewMode === "list" ? "grid gap-3 md:grid-cols-[1.15fr_0.95fr_auto] md:items-center" : "space-y-2"}>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Phone className="h-4 w-4 shrink-0" />
                     <span className="truncate">{c.phone}</span>

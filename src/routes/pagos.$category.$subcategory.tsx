@@ -82,10 +82,10 @@ function SubcategoryPage() {
   const [editing, setEditing] = useState<Payment | undefined>();
   const [registering, setRegistering] = useState<Payment | undefined>();
   const [toDelete, setToDelete] = useState<Payment | undefined>();
-  const [confirmDeleteText, setConfirmDeleteText] = useState("");
+  const [deleteConfirmationStep, setDeleteConfirmationStep] = useState(false);
 
   useEffect(() => {
-    if (toDelete) setConfirmDeleteText("");
+    if (!toDelete) setDeleteConfirmationStep(false);
   }, [toDelete]);
 
   const items = useMemo(() => {
@@ -114,9 +114,11 @@ function SubcategoryPage() {
         if (!q) return true;
         // match client name
         if (g.client?.name.toLowerCase().includes(q)) return true;
+        if (g.client?.phone.toLowerCase().includes(q)) return true;
         // match any payment fields
         for (const p of g.payments) {
           if (p.inscriptionDate.toLowerCase().includes(q)) return true;
+          if (formatMonth(p.inscriptionDate.slice(0, 7)).toLowerCase().includes(q)) return true;
           if ((p.serviceMonth ?? "").toLowerCase().includes(q)) return true;
           if (formatMonth(p.serviceMonth).toLowerCase().includes(q)) return true;
           if (String(p.amount).includes(q)) return true;
@@ -193,17 +195,17 @@ function SubcategoryPage() {
       </div>
 
       <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
-        <div className="flex min-w-0 items-center gap-2 flex-1">
+        <div className="flex min-w-0 items-start gap-2 flex-1">
           <div className="relative flex-1">
             <Input
-              placeholder="Buscar por cliente, mes o fecha…"
+              placeholder="Nombre, teléfono, mes de inscripción, mes del servicio o importe"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-3"
             />
           </div>
           <Select value={debtFilter} onValueChange={(v) => setDebtFilter(v as any)}>
-            <SelectTrigger className="w-[140px] ml-2">
+            <SelectTrigger className="ml-2 w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -213,7 +215,7 @@ function SubcategoryPage() {
             </SelectContent>
           </Select>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="w-[200px] ml-2">
+            <SelectTrigger className="ml-2 w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -254,56 +256,72 @@ function SubcategoryPage() {
           {items.map(({ id, client, payments }) => {
             const totalDebt = payments.reduce((s, p) => s + p.debt, 0);
             return (
-              <Card key={id} className="transition-shadow hover:shadow-md min-h-[14rem]">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-3 text-base">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+              <Card key={id} className="transition-shadow hover:shadow-md min-h-[13rem]">
+                <CardHeader className="pb-1.5">
+                    <CardTitle className="flex items-start gap-2.5 text-sm">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
                       {client ? client.name.slice(0, 1).toUpperCase() : <User className="h-4 w-4" />}
                     </div>
-                    <span className="min-w-0 flex-1 truncate flex items-center gap-2">
-                      <span className="truncate">{client?.name ?? "Cliente eliminado"}</span>
-                      {totalDebt > 0 && <span className="inline-block h-2 w-2 rounded-full bg-destructive" aria-hidden />}
+                      <span className="min-w-0 flex-1 space-y-0.5">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-semibold">{client?.name ?? "Cliente eliminado"}</span>
+                        {totalDebt > 0 && <span className="inline-block h-2 w-2 rounded-full bg-destructive" aria-hidden />}
+                      </span>
+                        <span className="block text-[11px] text-muted-foreground">
+                        {payments.length} inscripciones registradas
+                      </span>
                     </span>
                     <Badge variant="secondary" className="shrink-0">{payments.length} inscripciones</Badge>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-muted-foreground">Deuda total</span>
-                    <span className="font-medium">{totalDebt.toFixed(2)} €</span>
+                  <CardContent className="space-y-2.5">
+                    <div className="grid gap-2.5 rounded-lg bg-muted/40 p-2.5 sm:grid-cols-2">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Deuda total</div>
+                      <div className="text-base font-semibold">{totalDebt.toFixed(2)} €</div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Teléfono</div>
+                      <div className="text-sm font-medium">{client?.phone || "Sin teléfono"}</div>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2">
                     {payments.map((p) => (
-                      <span key={p.id} className="rounded-full bg-muted px-3 py-1.5 text-sm min-w-[3.5rem] text-center">{p.serviceMonth ? formatMonth(p.serviceMonth) : "-"}</span>
+                        <span key={p.id} className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground min-w-[3.25rem] text-center">
+                        {p.serviceMonth ? formatMonth(p.serviceMonth) : "-"}
+                      </span>
                     ))}
                   </div>
-                  {client?.phone && <div className="text-xs text-muted-foreground">Tel: {client.phone}</div>}
-                  <div className="flex flex-wrap justify-end gap-2 pt-2">
+                    <div className="flex flex-wrap justify-end gap-1.5 pt-1">
                     <Button size="sm" variant="default" onClick={() => setExpandedClients((s) => ({ ...s, [id]: !s[id] }))}>
                       {expandedClients[id] ? "Ocultar inscripciones" : "Ver inscripciones"}
                     </Button>
                   </div>
                   {expandedClients[id] && (
-                    <div className="mt-3 space-y-3">
+                      <div className="mt-2.5 space-y-2.5 rounded-lg border bg-background/60 p-2.5">
                       {payments.map((payment) => (
-                        <div key={payment.id} className="rounded-md border p-4 min-h-[6rem]">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <div>
-                              <div className="text-sm text-muted-foreground">Cuantía mes</div>
-                              <div className="font-medium text-lg">{payment.amount.toFixed(2)} €</div>
+                          <div key={payment.id} className="rounded-md border p-3 min-h-[5.5rem] bg-card">
+                            <div className="grid gap-2 sm:grid-cols-[1fr_minmax(9rem,12rem)] sm:items-start">
+                              <div>
+                                <div className="text-sm text-muted-foreground">Cuantía del mes</div>
+                                <div className="text-base font-semibold">{payment.amount.toFixed(2)} €</div>
+                                <div className="mt-1 text-sm text-muted-foreground">
+                                  {payment.lastPaymentDate ? (
+                                    <span>Último pago: {formatDate(payment.lastPaymentDate)}</span>
+                                  ) : (
+                                    <span>Sin pagos registrados</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/30 px-3 py-2 text-center sm:min-h-[4.5rem] sm:self-center">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  {payment.serviceMonth ? formatMonth(payment.serviceMonth) : "-"}
+                                </div>
+                                <div className={`text-base font-semibold ${payment.debt > 0 ? "text-destructive" : ""}`}>
+                                  {payment.debt.toFixed(2)} €
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-base text-muted-foreground">{payment.serviceMonth ? formatMonth(payment.serviceMonth) : "-"}</div>
-                          </div>
-                          <div className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                            <div className="text-sm">
-                              {payment.lastPaymentDate ? (
-                                <div className="text-muted-foreground">Último pago: {formatDate(payment.lastPaymentDate)}</div>
-                              ) : (
-                                <div className="text-muted-foreground">Sin pagos registrados</div>
-                              )}
-                            </div>
-                            <div className={`font-semibold ${payment.debt > 0 ? 'text-destructive' : ''}`}>{payment.debt.toFixed(2)} €</div>
-                          </div>
                           <div className="flex flex-wrap justify-end gap-2 pt-3">
                             <Button size="sm" onClick={() => setRegistering(payment)}>
                               <CircleDollarSign className="h-4 w-4" /> Registrar pago
@@ -326,32 +344,41 @@ function SubcategoryPage() {
         </div>
       )}
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(undefined)}>
+      <AlertDialog
+        open={!!toDelete}
+        onOpenChange={(o) => {
+          if (!o) {
+            setToDelete(undefined);
+            setDeleteConfirmationStep(false);
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar inscripción?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Para confirmar, escribe el nombre del cliente asociado a la inscripción.
+              {deleteConfirmationStep
+                ? "Última confirmación: pulsa eliminar de nuevo para borrar la inscripción de forma permanente."
+                : "Esta acción no se puede deshacer. Pulsa eliminar para continuar con la confirmación."}
             </AlertDialogDescription>
-            <div className="mt-4">
-              <Input value={confirmDeleteText} onChange={(e) => setConfirmDeleteText(e.target.value)} placeholder="Nombre del cliente" />
-            </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (toDelete) {
-                  const clientName = clients.find((c) => c.id === toDelete.clientId)?.name;
-                  if (clientName && confirmDeleteText.trim() === clientName) deletePayment(toDelete.id);
+                if (!toDelete) return;
+
+                if (!deleteConfirmationStep) {
+                  setDeleteConfirmationStep(true);
+                  return;
                 }
+
+                deletePayment(toDelete.id);
                 setToDelete(undefined);
+                setDeleteConfirmationStep(false);
               }}
-              disabled={
-                !(toDelete && clients.find((c) => c.id === toDelete.clientId)?.name === confirmDeleteText.trim())
-              }
             >
-              Eliminar
+              {deleteConfirmationStep ? "Confirmar eliminación" : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -379,6 +406,7 @@ function SubcategoryPage() {
               clientName: data.clientName ?? clients.find((c) => c.id === data.clientId)?.name ?? "",
               category,
               subcategory,
+              totalAmount: data.amount,
               amount: data.lastPaidAmount,
               date: data.lastPaymentDate,
               inscriptionDate: data.inscriptionDate,
@@ -412,6 +440,7 @@ function SubcategoryPage() {
             clientName: clientName || registeringClient?.name || "",
             category,
             subcategory,
+            totalAmount: registering.amount,
             amount,
             date,
             inscriptionDate: registering.inscriptionDate,

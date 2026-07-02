@@ -42,7 +42,7 @@ function AccessibilityPage() {
   const { getPreferences, updatePreferences, deletePaymentHistory } = usePreferences();
   const prefs = getPreferences();
   const [theme, setTheme] = useState<"light" | "dark" | "system">(prefs.theme);
-  const [fontSize, setFontSize] = useState<"small" | "normal" | "large" | "extra-large">(prefs.fontSize);
+  const [fontSize, setFontSize] = useState<"small" | "medium" | "large" | "extra-large">(prefs.fontSize);
   const [securityWord, setSecurityWord] = useState("");
   const [securityInput, setSecurityInput] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -56,7 +56,7 @@ function AccessibilityPage() {
   };
 
   const handleFontSizeChange = (newSize: string) => {
-    const s = newSize as "small" | "normal" | "large" | "extra-large";
+    const s = newSize as "small" | "medium" | "large" | "extra-large";
     setFontSize(s);
     updatePreferences({ fontSize: s });
     applyFontSize(s);
@@ -82,23 +82,16 @@ function AccessibilityPage() {
 
   const applyFontSize = (size: string) => {
     const html = document.documentElement;
-    html.classList.remove("font-small", "font-normal", "font-large", "font-extra-large");
-    
-    const sizeMap: Record<string, string> = {
-      small: "text-sm",
-      normal: "text-base",
-      large: "text-lg",
-      "extra-large": "text-xl",
-    };
-    
+    html.classList.remove("font-small", "font-medium", "font-large", "font-extra-large");
+
     if (size === "small") {
-      html.style.fontSize = "14px";
+      html.style.fontSize = "12px";
     } else if (size === "large") {
-      html.style.fontSize = "18px";
-    } else if (size === "extra-large") {
-      html.style.fontSize = "20px";
-    } else {
       html.style.fontSize = "16px";
+    } else if (size === "extra-large") {
+      html.style.fontSize = "18px";
+    } else {
+      html.style.fontSize = "14px";
     }
   };
 
@@ -107,6 +100,13 @@ function AccessibilityPage() {
     applyTheme(theme);
     applyFontSize(fontSize);
   }, []);
+
+  useEffect(() => {
+    setTheme(prefs.theme);
+    setFontSize(prefs.fontSize);
+    applyTheme(prefs.theme);
+    applyFontSize(prefs.fontSize);
+  }, [prefs.theme, prefs.fontSize]);
 
   const handleDeletePaymentHistory = () => {
     if (securityInput !== securityWord) {
@@ -189,10 +189,10 @@ function AccessibilityPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="small">Pequeño (14px)</SelectItem>
-                    <SelectItem value="normal">Normal (16px)</SelectItem>
-                    <SelectItem value="large">Grande (18px)</SelectItem>
-                    <SelectItem value="extra-large">Muy grande (20px)</SelectItem>
+                    <SelectItem value="small">Pequeño (12 px)</SelectItem>
+                    <SelectItem value="medium">Mediano (14 px)</SelectItem>
+                    <SelectItem value="large">Grande (16 px)</SelectItem>
+                    <SelectItem value="extra-large">Extra grande (18 px)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -30,7 +30,9 @@ type PaymentRow = {
   id: string;
   clientName: string;
   discipline: string;
+  totalAmount: number;
   amount: number;
+  remainingDebt: number;
   date: string;
   inscriptionDate: string;
   createdAt: number;
@@ -50,7 +52,9 @@ function PaymentsHistoryPage() {
           CATEGORIES[record.category]?.subcategories.find((sub) => sub.slug === record.subcategory)
             ?.label ?? record.subcategory
         }`,
+        totalAmount: record.totalAmount,
         amount: record.amount,
+        remainingDebt: Math.max(0, record.totalAmount - record.amount),
         date: record.date,
         inscriptionDate: record.inscriptionDate,
         serviceMonth: record.serviceMonth,
@@ -64,7 +68,7 @@ function PaymentsHistoryPage() {
           row.discipline.toLowerCase().includes(q) ||
           row.amount.toFixed(2).includes(q) ||
           formatDate(row.date).toLowerCase().includes(q) ||
-          formatDate(row.inscriptionDate).toLowerCase().includes(q)
+          formatDate(row.inscriptionDate).toLowerCase().includes(q) ||
           (row.serviceMonth ? formatMonth(row.serviceMonth).toLowerCase().includes(q) : false)
         );
       })
@@ -158,6 +162,7 @@ function PaymentsHistoryPage() {
                 <TableHead>Cliente</TableHead>
                 <TableHead>Disciplina</TableHead>
                 <TableHead className="text-right">Cantidad abonada</TableHead>
+                <TableHead className="text-right">Falta</TableHead>
                 <TableHead className="hidden sm:table-cell">Fecha de pago</TableHead>
                 <TableHead className="hidden sm:table-cell">Mes del servicio</TableHead>
                 <TableHead className="hidden sm:table-cell">Fecha de inscripción</TableHead>
@@ -169,6 +174,9 @@ function PaymentsHistoryPage() {
                   <TableCell className="font-medium">{row.clientName}</TableCell>
                   <TableCell className="text-muted-foreground">{row.discipline}</TableCell>
                   <TableCell className="text-right font-semibold">{formatMoney(row.amount)}</TableCell>
+                  <TableCell className="text-right font-semibold text-muted-foreground">
+                    {formatMoney(row.remainingDebt)}
+                  </TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
                     <span className="inline-flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" />
