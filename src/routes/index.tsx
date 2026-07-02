@@ -35,12 +35,6 @@ function ClientsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
   const [toDelete, setToDelete] = useState<Client | undefined>();
-  const [secondConfirm, setSecondConfirm] = useState(false);
-
-  // reset second confirmation when dialog opens/closes
-  useEffect(() => {
-    if (!toDelete) setSecondConfirm(false);
-  }, [toDelete]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -193,68 +187,38 @@ function ClientsPage() {
         }}
       />
 
-      <AlertDialog open={!!toDelete} onOpenChange={(o) => {
-        if (!o) {
-          setToDelete(undefined);
-          setSecondConfirm(false);
-        }
-      }}>
+      <AlertDialog
+        open={!!toDelete}
+        onOpenChange={(o) => {
+          if (!o) setToDelete(undefined);
+        }}
+      >
         <AlertDialogContent>
-          {!secondConfirm ? (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción no se puede deshacer. Se eliminará a {toDelete?.name}.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    setSecondConfirm(true);
-                  }}
-                >
-                  Eliminar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          ) : (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar eliminación</AlertDialogTitle>
-                <AlertDialogDescription>
-                  ¿Estás seguro? Esta acción eliminará al cliente y todas sus inscripciones.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel
-                  onClick={() => {
-                    setSecondConfirm(false);
-                  }}
-                >
-                  Cancelar
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (toDelete) {
-                      try {
-                        deleteClient(toDelete.id);
-                        toast.success("Cliente eliminado");
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Error al eliminar el cliente");
-                      }
-                    }
-                    setToDelete(undefined);
-                    setSecondConfirm(false);
-                  }}
-                >
-                  Aceptar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará a {toDelete?.name} y sus inscripciones.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toDelete) {
+                  try {
+                    deleteClient(toDelete.id);
+                    toast.success("Cliente eliminado");
+                  } catch (err) {
+                    console.error(err);
+                    toast.error("Error al eliminar el cliente");
+                  }
+                }
+                setToDelete(undefined);
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

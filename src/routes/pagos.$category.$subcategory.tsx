@@ -157,7 +157,10 @@ function SubcategoryPage() {
     return groups;
   }, [payments, clients, category, subcategory, sort, search, debtFilter]);
 
-  const totalDebt = items.reduce((s, i) => s + i.payment.debt, 0);
+  const totalDebt = items.reduce(
+    (sum, item) => sum + item.payments.reduce((paymentSum, payment) => paymentSum + payment.debt, 0),
+    0,
+  );
   const registeringClient = registering
     ? clients.find((c) => c.id === registering.clientId)
     : undefined;
