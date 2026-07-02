@@ -1,9 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { Plus, Search, Pencil, Trash2, Phone, Mail, ArrowDownAZ, ArrowUpAZ, User } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Pencil,
+  Trash2,
+  Phone,
+  Mail,
+  ArrowDownAZ,
+  ArrowUpAZ,
+  User,
+  LayoutGrid,
+  List,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +51,10 @@ export const Route = createFileRoute("/")({
 function ClientsPage() {
   const { clients, addClient, updateClient, deleteClient } = useClients();
   const [search, setSearch] = useState("");
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortMode, setSortMode] = useState<"current" | "recent" | "name-asc" | "name-desc">(
+    "current",
+  );
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Client | undefined>();
   const [toDelete, setToDelete] = useState<Client | undefined>();
@@ -45,11 +68,22 @@ function ClientsPage() {
         c.phone.toLowerCase().includes(q) ||
         (c.email?.toLowerCase().includes(q) ?? false),
     );
-    list.sort((a, b) =>
-      sortAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name),
-    );
+    switch (sortMode) {
+      case "recent":
+        list.sort((a, b) => b.createdAt - a.createdAt);
+        break;
+      case "name-asc":
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "name-desc":
+        list.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+      case "current":
+      default:
+        break;
+    }
     return list;
-  }, [clients, search, sortAsc]);
+  }, [clients, search, sortMode]);
 
   const { payments } = usePayments();
   const clientsWithDebt = useMemo(() => new Set(payments.filter((p) => p.debt > 0).map((p) => p.clientId)), [payments]);
@@ -63,8 +97,8 @@ function ClientsPage() {
         </p>
       </div>
 
-      <div className="mb-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:flex-wrap">
-        <div className="relative min-w-0 flex-1 sm:max-w-sm">
+      <div className="mb-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-center">
+        <div className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, teléfono o correo…"
@@ -73,15 +107,35 @@ function ClientsPage() {
             className="pl-9"
           />
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <Select value={sortMode} onValueChange={(value) => setSortMode(value as typeof sortMode)}>
+          <SelectTrigger className="w-full lg:w-[210px]">
+            <SelectValue placeholder="Ordenar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="current">Orden actual</SelectItem>
+            <SelectItem value="recent">Añadidos recientes</SelectItem>
+            <SelectItem value="name-asc">Nombre (A–Z)</SelectItem>
+            <SelectItem value="name-desc">Nombre (Z–A)</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex shrink-0 items-center gap-2 justify-start lg:justify-end">
           <Button
-            variant="outline"
+            variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
-            onClick={() => setSortAsc((v) => !v)}
-            title="Ordenar alfabéticamente"
+            onClick={() => setViewMode("grid")}
+            title="Ver en tarjetas"
           >
-            {sortAsc ? <ArrowDownAZ className="h-4 w-4" /> : <ArrowUpAZ className="h-4 w-4" />}
-            <span className="hidden sm:inline">{sortAsc ? "A–Z" : "Z–A"}</span>
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Tarjetas</span>
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+            title="Ver en lista"
+          >
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">Lista</span>
           </Button>
           <Button
             onClick={() => {
@@ -121,7 +175,7 @@ function ClientsPage() {
           )}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={viewMode === "grid" ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-3"}>
           {filtered.map((c) => (
             <Card key={c.id} className="transition-shadow hover:shadow-md">
               <CardHeader className="pb-2">
@@ -137,19 +191,36 @@ function ClientsPage() {
                   </span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{c.phone}</span>
-                </div>
-                {c.email && (
+              <CardContent className={viewMode === "list" ? "space-y-3" : "space-y-2"}>
+                <div className={viewMode === "list" ? "grid gap-3 md:grid-cols-[1.2fr_0.8fr_auto] md:items-center" : "space-y-2"}>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{c.email}</span>
+                    <Phone className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{c.phone}</span>
                   </div>
-                )}
-                {c.notes && (
+                  {c.email ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{c.email}</span>
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Sin correo</div>
+                  )}
+                  {viewMode === "list" && (
+                    <div className="flex items-center gap-2 justify-start md:justify-end text-xs text-muted-foreground">
+                      <Sparkles className="h-4 w-4" />
+                      {new Intl.DateTimeFormat("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }).format(new Date(c.createdAt))}
+                    </div>
+                  )}
+                </div>
+                {viewMode === "grid" && c.notes && (
                   <p className="line-clamp-2 text-sm text-muted-foreground">{c.notes}</p>
+                )}
+                {viewMode === "list" && c.notes && (
+                  <p className="text-sm text-muted-foreground">{c.notes}</p>
                 )}
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
